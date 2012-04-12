@@ -6,93 +6,92 @@ var _ = require('underscore');
 
 // Process arguments
 var argv = require('optimist')
-						.usage('Check out a cs branch given its story number.\nUseage: $0 [story_number]')
-						.alias('t', 'scrum_team')
-						.describe('t', 'scrum team')
-						.default('t', 'a')
-						.check(function(optimist) {
+             .usage('Check out a cs branch given its story number.\nUseage: $0 [story_number]')
+             .alias('t', 'scrum_team')
+             .describe('t', 'scrum team')
+             .default('t', 'a')
+             .check(function(optimist) {
 
-							var story = optimist._.shift();
-							if(story === undefined) {
-								throw "Story number not included";
-							}
+               var story = optimist._.shift();
+               if(story === undefined) {
+                 throw "Story number not included";
+               }
 
-							story = parseInt(story);
-							if(_.isNaN(story)) {
-								throw "Story number must be an integer";
-							}
+               story = parseInt(story);
+               if(_.isNaN(story)) {
+                 throw "Story number must be an integer";
+               }
 							
-							optimist.s = story;
+               optimist.s = story;
 
-							return true;
-						})
-						.argv;
+               return true;
+             }).argv;
 
 var GITC = {
 
-	// Matching expression for query
-	queryFilter: undefined,
+  // Matching expression for query
+  queryFilter: undefined,
 
-	// Check out a branch
-	checkout: function( branch ) {
-		console.log("Checking out " + branch);
-		var child = exec("git checkout " + branch, function( error, stdout, stderr ) {
+  // Check out a branch
+  checkout: function( branch ) {
+    console.log("Checking out " + branch);
+    var child = exec("git checkout " + branch, function( error, stdout, stderr ) {
 
-			if(error !== null) {
-				console.log(error.message);
-				process.exit(error.code);
-			}
+      if(error !== null) {
+        console.log(error.message);
+        process.exit(error.code);
+      }
 
-			console.log(stdout);
+      console.log(stdout);
 
-		});
-	},
+    });
+  },
 
-	// Make the function go
-	start: function() {
-		var child;
+  // Make the function go
+  start: function() {
+    var child;
 
-		// Build the query filter
-		GITC.queryFilter = new RegExp(argv.t + '/' + argv.s + '-');
+    // Build the query filter
+    GITC.queryFilter = new RegExp(argv.t + '/' + argv.s + '-');
 
-		child = exec("git branch -r", function( error, stdout, stderr ) {
+    child = exec("git branch -r", function( error, stdout, stderr ) {
 
-			var branches;
+      var branches;
 
-			if(error !== null) {
-				console.log(error.message);
-				process.exit(error.code);
-			}
-			
-			branches = stdout.split('\n');
+      if(error !== null) {
+        console.log(error.message);
+        process.exit(error.code);
+      }
 
-			// Filter out only the branches that match the query
-			branches = _.filter(branches, function(branch) {
-				return branch.match(GITC.queryFilter);
-			});
+      branches = stdout.split('\n');
 
-			// Format them properly
-			branches = _.map(branches, function(branch) {
-				return branch.replace(/^\s*(origin\/)?/, '');
-			});
+      // Filter out only the branches that match the query
+      branches = _.filter(branches, function(branch) {
+        return branch.match(GITC.queryFilter);
+      });
 
-			// Result depends on how many branches returned.
-			if(branches.length === 0) {
-				console.log("No branches found.");
-				process.exit(0);
-			}
-			else if(branches.length === 1) {
-				GITC.checkout(branches[0]);
-			}
-			else {
-				console.log("Multiple branches found with that story number:");
-				_.each(branches, function(branch) {
-					console.log('  ' + branch);
-				});
-			}
+      // Format them properly
+      branches = _.map(branches, function(branch) {
+        return branch.replace(/^\s*(origin\/)?/, '');
+      });
 
-		});
-	},
+      // Result depends on how many branches returned.
+      if(branches.length === 0) {
+        console.log("No branches found.");
+        process.exit(0);
+      }
+      else if(branches.length === 1) {
+        GITC.checkout(branches[0]);
+      }
+      else {
+        console.log("Multiple branches found with that story number:");
+        _.each(branches, function(branch) {
+          console.log('  ' + branch);
+        });
+      }
+
+    });
+  },
 
 }
 
